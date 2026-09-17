@@ -1,0 +1,32 @@
+{
+ "jornadas": [
+  {
+   "id": "2026-09-19-visita",
+   "ciclo": "2026-09-19",
+   "tipo": "visita",
+   "titulo": "Sábado 19 de septiembre · La Loma, Uta, 25 de Noviembre",
+   "fecha": "2026-09-19",
+   "archivo": "2026-09-19-visita.json",
+   "promotores": 70
+  },
+  {
+   "id": "2026-08-22-visita",
+   "ciclo": "2026-08-22",
+   "tipo": "visita",
+   "titulo": "Sábado 22 de agosto · Barrio Sarmiento",
+   "fecha": "2026-08-22",
+   "archivo": "2026-08-22-visita.json",
+   "promotores": 70
+  },
+  {
+   "id": "2026-08-22-peinado",
+   "ciclo": "2026-08-22",
+   "tipo": "peinado",
+   "titulo": "Peinado del 22 de agosto",
+   "fecha": "2026-08-22",
+   "archivo": "2026-08-22-peinado.json",
+   "promotores": 62
+  }
+ ],
+ "actualizado": "2026-09-17T19:14:41"
+}
