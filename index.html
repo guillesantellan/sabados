@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Recorrida</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1F3864">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recorrida">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" href="icono-192.png">
+<style>
+:root{--az:#1F3864;--ac:#2a78d6;--na:#C1440E;--ok:#1e7d44;--bo:#dedcd6;--su:#f4f3f0;
+      --tx:#0b0b0b;--g:#6b6a66}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+     background:var(--su);color:var(--tx);padding-bottom:env(safe-area-inset-bottom)}
+header{background:var(--az);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 14px 12px;
+       position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:16px;font-weight:650}
+header .s{font-size:12.5px;opacity:.85;margin-top:2px}
+header .volver{background:none;border:0;color:#fff;font-size:14px;padding:0 0 6px;cursor:pointer}
+.wrap{padding:12px;max-width:760px;margin:0 auto}
+.caja{background:#fff;border:1px solid var(--bo);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.caja .cu{padding:13px 14px}
+h2{margin:0 0 4px;font-size:17px;font-weight:660}
+p{margin:0 0 10px;line-height:1.5}
+.nota{font-size:12.5px;color:var(--g);line-height:1.5}
+input,textarea,select{font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--bo);
+      background:#fff;color:var(--tx);width:100%}
+textarea{min-height:46px;resize:vertical}
+button.b{font:inherit;font-size:15px;font-weight:650;padding:13px 16px;border-radius:11px;border:0;
+      background:var(--az);color:#fff;width:100%;cursor:pointer}
+button.b.sec{background:var(--su);color:var(--tx);border:1px solid var(--bo)}
+button.b:disabled{opacity:.5}
+#codigo{font:600 26px/1.2 ui-monospace,Menlo,Consolas,monospace;text-align:center;letter-spacing:3px;
+      text-transform:uppercase}
+.jor{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--bo);
+     border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;font:inherit}
+.jor .t{font-weight:660;font-size:16px}
+.jor .d{font-size:13px;color:var(--g);margin-top:3px}
+.jor .e{font-size:12.5px;margin-top:7px;font-weight:650}
+.jor.hecha{opacity:.72}
+.jor.sub{margin-left:18px;border-left:3px solid var(--na)}
+.cabciclo{font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+     color:var(--g);margin:16px 0 8px;padding-left:2px}
+.cabciclo:first-child{margin-top:2px}
+.tag{display:inline-block;border-radius:20px;padding:2px 9px;font-size:11.5px;margin-right:5px;
+     background:var(--su);color:var(--g)}
+.tag.v{background:#EAF7EE;color:var(--ok)} .tag.p{background:#FDF1EA;color:var(--na)}
+.pu{border-top:3px solid var(--az)}
+.pu h3{margin:0;padding:12px 14px 8px;font-size:17px;font-weight:660}
+.per{border-top:1px solid var(--su);padding:12px 14px}
+.per .nom{font-weight:650;font-size:15.5px}
+.per .det{font-size:12.5px;color:var(--g);margin:1px 0 8px}
+.lb{font-size:12.5px;color:var(--g);margin:10px 0 5px;font-weight:600}
+.op{display:flex;gap:6px;flex-wrap:wrap}
+.op button{flex:1;min-width:46px;padding:12px 6px;border:1px solid var(--bo);background:#fff;
+     border-radius:10px;font:inherit;font-size:14px;cursor:pointer;color:var(--tx)}
+.op button.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:650}
+.op button.on.no{background:var(--na);border-color:var(--na)}
+.op button.on.ok{background:var(--ok);border-color:var(--ok)}
+.esc button{font-variant-numeric:tabular-nums}
+.tel{background:#FDF1EA;border:1px solid #E3B79E;border-radius:10px;padding:10px 12px;margin-top:9px}
+.tel .n{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.wa{display:block;text-align:center;background:#25D366;color:#fff;font-weight:650;padding:12px;
+    border-radius:10px;text-decoration:none;margin-top:9px}
+.pie{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--bo);
+     padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center}
+.pie .p{flex:1;font-size:12.5px;color:var(--g);line-height:1.35}
+.pie button{padding:12px 15px;border-radius:10px;border:0;background:var(--az);color:#fff;
+     font-size:14px;font-weight:650;cursor:pointer}
+.pie button.sec{background:var(--su);color:var(--tx);border:1px solid var(--bo)}
+#guardado.on{color:var(--ok);font-weight:650}
+#enviado{color:var(--ok);font-weight:650}
+.aviso{background:#FDF1EA;border-left:3px solid var(--na);padding:10px 12px;border-radius:0 9px 9px 0;
+       font-size:13.5px;line-height:1.5;margin:10px 0}
+.aviso.az{background:#EAF0F8;border-color:var(--az)}
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;
+     align-items:center;justify-content:center;padding:14px}
+#modal.on{display:flex}
+.mcaja{background:#fff;border-radius:14px;padding:16px;max-width:520px;width:100%}
+.mcaja textarea{height:190px;font:12px ui-monospace,Menlo,Consolas,monospace}
+.mfila{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.mfila button{width:auto;padding:11px 15px;border-radius:10px;border:0;background:var(--az);
+     color:#fff;font-size:14px;font-weight:650}
+.mfila button.sec{background:var(--su);color:var(--tx);border:1px solid var(--bo)}
+.oculto{display:none}
+details>summary{cursor:pointer;font-size:13px;color:var(--g);padding:4px 0;list-style-position:inside}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="volver oculto" id="volver">‹ Volver</button>
+  <h1 id="titulo">Recorrida</h1>
+  <div class="s" id="sub"></div>
+</header>
+
+<!-- ───────────────────────── entrar ───────────────────────── -->
+<div class="wrap" id="pEntrar">
+  <div class="caja"><div class="cu">
+    <h2>Tu código</h2>
+    <p class="nota">Es el que te dieron en la reunión. Se escribe una sola vez: después la app
+      te reconoce sola y te van apareciendo las jornadas nuevas.</p>
+    <input id="codigo" placeholder="ABC-234" autocomplete="off" autocapitalize="characters"
+           spellcheck="false" inputmode="text" maxlength="9">
+    <div style="height:10px"></div>
+    <button class="b" id="entrar">Entrar</button>
+    <div id="errEntrar" class="aviso oculto"></div>
+  </div></div>
+  <div class="caja"><div class="cu">
+    <div class="nota"><b>¿Para qué sirve el código?</b> Los datos de los vecinos viajan cifrados.
+      Con tu código se abre solo tu parte: nadie más ve tus timbres y vos no ves los de los demás.
+      Si lo perdés, pedile uno nuevo al responsable de tu grupo.</div>
+  </div></div>
+</div>
+
+<!-- ───────────────────────── jornadas ───────────────────────── -->
+<div class="wrap oculto" id="pJornadas">
+  <div id="listaJor"></div>
+  <div id="sinJor" class="caja oculto"><div class="cu">
+    <h2>Todavía no hay nada para vos</h2>
+    <p class="nota">Cuando se publique una jornada nueva va a aparecer acá. Abrí la app con
+      internet de vez en cuando para que se actualice.</p>
+  </div></div>
+  <details style="margin-top:6px"><summary>Cambiar de promotor o salir</summary>
+    <div class="caja" style="margin-top:8px"><div class="cu">
+      <p class="nota">Esto borra tu código y todo lo que cargaste en este teléfono.
+        Solo si te equivocaste de código o si prestás el teléfono a otro promotor.</p>
+      <button class="b sec" id="salir" style="color:var(--na)">Borrar todo y salir</button>
+    </div></div>
+  </details>
+</div>
+
+<!-- ───────────────────────── trabajo ───────────────────────── -->
+<div class="oculto" id="pTrabajo">
+  <div class="wrap" id="cont"></div>
+  <div class="pie">
+    <div class="p"><span id="prog"></span> <span id="guardado"></span><br><span id="enviado"></span></div>
+    <button class="sec" id="btexto">Copiar</button>
+    <button id="benviar">Enviar</button>
+  </div>
+</div>
+
+<div id="modal"><div class="mcaja">
+  <h2>Copiá esto y pegalo en el grupo</h2>
+  <p class="nota">Tu teléfono no dejó compartir directo. Tocá el texto, se selecciona todo,
+     copialo y pegalo en el WhatsApp del equipo.</p>
+  <textarea id="mtxt" readonly></textarea>
+  <div class="mfila">
+    <button class="sec" id="mcerrar">Cerrar</button>
+    <button id="mcopiar">Seleccionar todo</button>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════════════
+   La app de la recorrida.
+
+   Todo lo que se publica en GitHub está cifrado: cada promotor tiene su bloque,
+   con una clave que sale de su propio código (PBKDF2 + AES-GCM, con WebCrypto,
+   que anda en iPhone y en Android). Sin código, los archivos no dicen nada.
+
+   Una vez que entró, la app guarda lo descifrado y lo cargado en el teléfono,
+   así funciona sin internet toda la jornada.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const LL = {
+  codigo: "recorrida.codigo",
+  datos:  id => "recorrida.datos." + id,     // lo descifrado
+  carga:  id => "recorrida.carga." + id,     // lo que va cargando
+  indice: "recorrida.indice"
+};
+const G = {
+  get(k, def){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; }
+               catch(e){ return def; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }
+             catch(e){ return false; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let CODIGO = G.get(LL.codigo, "");
+let JOR = null;        // la jornada abierta
+let MIO = null;        // mis datos descifrados
+let R = {};            // lo cargado
+let okGuardar = true;
+
+/* ─────────────────────────────── descifrar ─────────────────────────────── */
+const b64a = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const normal = c => String(c).toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+async function derivar(codigo, salB64, iter){
+  const mat = await crypto.subtle.importKey("raw", new TextEncoder().encode(normal(codigo)),
+              "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+      {name:"PBKDF2", salt:b64a(salB64), iterations:iter, hash:"SHA-256"}, mat, 384);
+  const b = new Uint8Array(bits);
+  const clave = await crypto.subtle.importKey("raw", b.slice(0,32), "AES-GCM", false, ["decrypt"]);
+  const etiqueta = [...b.slice(32,48)].map(x=>x.toString(16).padStart(2,"0")).join("");
+  return {clave, etiqueta};
+}
+async function abrir(jornada, codigo){
+  const {clave, etiqueta} = await derivar(codigo, jornada.kdf.sal, jornada.kdf.iter);
+  const bl = jornada.bloques[etiqueta];
+  if(!bl) return null;                       // ese código no tiene bloque en esta jornada
+  const claro = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64a(bl.iv)}, clave, b64a(bl.ct));
+  return JSON.parse(new TextDecoder().decode(claro));
+}
+
+/* ─────────────────────────────── traer del servidor ─────────────────────────────── */
+async function bajar(url){
+  const r = await fetch(url, {cache:"no-cache"});
+  if(!r.ok) throw new Error(url + " → " + r.status);
+  return r.json();
+}
+async function sincronizar(){
+  /* Trae el índice y, de las jornadas que todavía no tengo abiertas, intenta abrir la mía.
+     Si no hay internet no pasa nada: se sigue con lo que ya está en el teléfono. */
+  let ind;
+  try{ ind = await bajar("jornadas/indice.json"); G.set(LL.indice, ind); }
+  catch(e){ ind = G.get(LL.indice, null); if(!ind) return {jornadas:[], sinRed:true}; }
+  const mias = [];
+  for(const j of ind.jornadas){
+    const ya = G.get(LL.datos(j.id), null);
+    if(ya){ mias.push({...j, datos:ya}); continue; }
+    try{
+      const arch = await bajar("jornadas/" + j.archivo);
+      const mio = await abrir(arch, CODIGO);
+      if(mio){ G.set(LL.datos(j.id), mio); mias.push({...j, datos:mio}); }
+    }catch(e){ /* sin red o no es mía: se ignora */ }
+  }
+  return {jornadas:mias};
+}
+
+/* ─────────────────────────────── pantallas ─────────────────────────────── */
+function ver(cual){
+  ["pEntrar","pJornadas","pTrabajo"].forEach(p => $(p).classList.toggle("oculto", p!==cual));
+  $("volver").classList.toggle("oculto", cual!=="pTrabajo");
+  window.scrollTo(0,0);
+}
+
+$("entrar").onclick = async () => {
+  const c = normal($("codigo").value);
+  const err = $("errEntrar");
+  if(c.length < 4){ err.textContent = "Escribí el código completo."; err.classList.remove("oculto"); return; }
+  $("entrar").disabled = true; $("entrar").textContent = "Buscando...";
+  err.classList.add("oculto");
+  CODIGO = c;
+  const {jornadas, sinRed} = await sincronizar();
+  $("entrar").disabled = false; $("entrar").textContent = "Entrar";
+  if(!jornadas.length){
+    CODIGO = "";
+    err.innerHTML = sinRed
+      ? "No hay internet y todavía no bajaste nada. Conectate una vez y volvé a probar."
+      : "Ese código no abre ninguna jornada. Fijate que esté bien escrito, o pedile otro al responsable de tu grupo.";
+    err.classList.remove("oculto");
+    return;
+  }
+  G.set(LL.codigo, CODIGO);
+  pintarJornadas(jornadas);
+};
+
+$("salir").onclick = () => {
+  if(!confirm("Esto borra tu código y todo lo que cargaste en este teléfono. ¿Seguro?")) return;
+  if(!confirm("Última confirmación: se pierde lo que no hayas enviado.")) return;
+  try{ Object.keys(localStorage).filter(k=>k.startsWith("recorrida.")).forEach(k=>localStorage.removeItem(k)); }
+  catch(e){}
+  location.reload();
+};
+$("volver").onclick = () => { arranque(); };
+
+function estadoJornada(j){
+  const c = G.get(LL.carga(j.id), {});
+  const tot = contarTotal(j);
+  const hechos = contarHechos(j, c);
+  if(c._enviado) return {t:"Enviada " + c._enviado, cl:"v"};
+  if(hechos === 0) return {t:"Sin empezar", cl:""};
+  return {t:`${hechos} de ${tot} cargados`, cl:"p"};
+}
+function contarTotal(j){
+  if(j.tipo === "visita") return j.datos.datos.reduce((a,f)=>a+f.npuertas, 0);
+  return (j.datos.v || vecinosPeinado(j.datos)).length;
+}
+function contarHechos(j, c){
+  if(j.tipo === "visita"){
+    let n = 0;
+    j.datos.datos.forEach(f => f.puertas.forEach((p,i) => { if(c["d"+f.n+"_"+i]?.vive) n++; }));
+    return n;
+  }
+  return vecinosPeinado(j.datos).filter(v => c[v.dni]?.res).length;
+}
+function vecinosPeinado(d){
+  if(d._v) return d._v;
+  const out = [];
+  ["llamar","visitar","sintocar"].forEach(fr => (d.datos[fr]||[]).forEach(v => out.push({...v, fr})));
+  d._v = out;
+  return out;
+}
+
+const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto",
+             "septiembre","octubre","noviembre","diciembre"];
+function fechaLarga(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso||"");
+  if(!m) return iso||"";
+  return `Sábado ${+m[3]} de ${MESES[+m[2]-1]} de ${m[1]}`;
+}
+function pintarJornadas(jornadas){
+  JOR = null;
+  $("titulo").textContent = "Hola" + (jornadas[0]?.datos?.nombre
+      ? ", " + jornadas[0].datos.nombre.split(" ")[0].charAt(0)
+        + jornadas[0].datos.nombre.split(" ")[0].slice(1).toLowerCase() : "");
+  $("sub").textContent = "Promotor " + (jornadas[0]?.datos?.prom ?? "");
+  /* Cada sábado es un ciclo cerrado: la visita y después el peinado que completa lo que
+     quedó abierto. Por eso no van en una lista corrida sino agrupadas de a dos, con el
+     peinado colgando de su visita. */
+  const ciclos = [];
+  jornadas.forEach(j => {
+    const c = j.ciclo || j.fecha;
+    let g = ciclos.find(x => x.ciclo === c);
+    if(!g){ g = {ciclo:c, js:[]}; ciclos.push(g); }
+    g.js.push(j);
+  });
+  const cont = $("listaJor");
+  cont.innerHTML = ciclos.map(g => `
+    <div class="cabciclo">${esc(fechaLarga(g.ciclo))}</div>
+    ${g.js.map(j => {
+      const i = jornadas.indexOf(j);
+      const e = estadoJornada(j);
+      const tot = contarTotal(j);
+      const pein = j.tipo !== "visita";
+      return `<button class="jor ${e.cl==="v"?"hecha":""} ${pein?"sub":""}" data-i="${i}">
+        <span class="tag ${pein?"p":"v"}">${pein?"Peinado":"Visita"}</span>
+        <div class="t">${esc(j.titulo)}</div>
+        <div class="d">${tot} ${pein?"vecinos":"timbres"}${pein?" · lo que quedó abierto el sábado":""}</div>
+        <div class="e" style="color:${e.cl==="v"?"var(--ok)":e.cl==="p"?"var(--na)":"var(--g)"}">${e.t}</div>
+      </button>`;
+    }).join("")}`).join("");
+  cont.querySelectorAll(".jor").forEach(b => b.onclick = () => abrirJornada(jornadas[+b.dataset.i]));
+  $("sinJor").classList.toggle("oculto", jornadas.length > 0);
+  ver("pJornadas");
+}
+
+/* ─────────────────────────────── trabajo ─────────────────────────────── */
+function abrirJornada(j){
+  JOR = j; MIO = j.datos; R = G.get(LL.carga(j.id), {});
+  $("titulo").textContent = j.titulo;
+  $("sub").textContent = "Promotor " + MIO.prom + (MIO.nombre ? " · " + MIO.nombre : "");
+  $("enviado").textContent = R._enviado ? "Enviado " + R._enviado : "";
+  pintarTrabajo();
+  ver("pTrabajo");
+}
+function guardar(){
+  okGuardar = G.set(LL.carga(JOR.id), R);
+  const g = $("guardado");
+  g.textContent = okGuardar ? "· guardado" : "· ojo: no se está guardando, no cierres la app";
+  g.className = okGuardar ? "on" : "";
+  pintarProg();
+}
+function set(k, campo, v){ (R[k] = R[k] || {})[campo] = v; guardar(); }
+function get(k, campo){ return (R[k]||{})[campo]; }
+window.set = set; window.get = get;
+
+function ops(k, campo, lista, clase){
+  return `<div class="op ${clase||""}">` + lista.map(o =>
+    `<button class="${get(k,campo)===o.v?"on "+(o.c||""):""}"
+      onclick="set('${k}','${campo}', get('${k}','${campo}')==='${o.v}'?null:'${o.v}');pintarTrabajo()"
+      >${esc(o.t)}</button>`).join("") + `</div>`;
+}
+window.pintarTrabajo = pintarTrabajo;
+
+function pintarTrabajo(){
+  $("cont").innerHTML = JOR.tipo === "visita" ? htmlVisita() : htmlPeinado();
+  pintarProg();
+}
+function pintarProg(){
+  const tot = contarTotal(JOR), h = contarHechos(JOR, R);
+  $("prog").textContent = `${h} de ${tot}`;
+}
+
+/* ─── visita: los timbres del sábado ─── */
+function htmlVisita(){
+  return MIO.datos.map(f => `
+    <div class="caja">
+      <div class="cu" style="background:#EAF0F8;padding:10px 14px">
+        ${f.entre.map(e=>`<div style="font-size:13px;line-height:1.5"><b style="color:var(--az)">Mz ${e.mz}</b> · ${esc(e.txt)}</div>`).join("")}
+      </div>
+      ${f.puertas.map((pu,i) => {
+        const k = "d"+f.n+"_"+i;
+        return `<div class="pu">
+          <h3>${i+1}. ${esc(pu.dom || "SIN DOMICILIO")}</h3>
+          <div class="cu" style="padding-top:0">
+            <div class="lb">¿Vive acá?</div>
+            ${ops(k,"vive",[{v:"si",t:"Sí",c:"ok"},{v:"mudo",t:"Se mudó",c:"no"},
+                            {v:"noestaba",t:"No estaba"},{v:"desconocen",t:"No lo conocen",c:"no"}])}
+          </div>
+          ${pu.gente.map(g => `
+            <div class="per">
+              <div class="nom">${esc(g.nom)}</div>
+              <div class="det">DNI ${esc(g.dni)} · ${esc(g.clase)} · ${esc(g.gen)}
+                ${(g.marcas||[]).map(m=>`<span class="tag">${esc(m)}</span>`).join("")}
+                ${g.ausente?'<span class="tag">no votó 2021</span>':""}</div>
+              <div class="tel">
+                <div style="font-size:12px;font-weight:700;color:var(--na)">TELÉFONO</div>
+                ${g.tel ? `<div class="n">${esc(g.tel)}</div>
+                  <div class="lb" style="margin-top:6px">¿Es este?</div>
+                  ${ops(g.dni,"telok",[{v:"si",t:"Está bien",c:"ok"},{v:"no",t:"Es otro",c:"no"}])}`
+                  : `<div class="n" style="color:var(--g);font-size:15px">no tenemos — pedíselo</div>`}
+                <input style="margin-top:8px" inputmode="tel" placeholder="${g.tel?"Anotá el nuevo":"Anotá el teléfono"}"
+                  value="${esc(get(g.dni,"telnuevo")||"")}" oninput="set('${g.dni}','telnuevo',this.value)">
+              </div>
+              <div class="lb">Adhesión a Maxi <span style="font-weight:400">· 1 nada · 5 mucha</span></div>
+              ${ops(g.dni,"maxi",[1,2,3,4,5].map(n=>({v:""+n,t:n})),"esc")}
+              <div class="lb">Adhesión a la gestión</div>
+              ${ops(g.dni,"gestion",[1,2,3,4,5].map(n=>({v:""+n,t:n})),"esc")}
+              <div class="lb">¿Se suma al equipo?</div>
+              ${ops(g.dni,"suma",[{v:"si",t:"Sí",c:"ok"},{v:"talvez",t:"Tal vez"},{v:"no",t:"No",c:"no"}])}
+              <div class="lb">Notas de la charla</div>
+              <textarea placeholder="En qué puede dar una mano, qué contó del barrio…"
+                oninput="set('${g.dni}','notas',this.value)">${esc(get(g.dni,"notas")||"")}</textarea>
+            </div>`).join("")}
+        </div>`;
+      }).join("")}
+    </div>`).join("") + `
+    <div class="aviso">Cuando termines, tocá <b>Enviar</b> y mandalo al grupo. Si no lo mandás,
+      lo que cargaste queda solo en tu teléfono.</div>
+    <div class="nota">Son datos personales protegidos por la Ley 25.326: no le muestres la
+      pantalla a nadie que no sea del equipo.</div>`;
+}
+
+/* ─── peinado: la segunda vuelta, por teléfono o visita ─── */
+const RES_LL = [{v:"atendio",t:"Atendió",c:"ok"},{v:"wsp",t:"Contestó el WhatsApp",c:"ok"},
+  {v:"cita",t:"Quedamos en hablar"},{v:"no1",t:"No atendió (1º)"},
+  {v:"no2",t:"No atendió (2º)",c:"no"},{v:"malnum",t:"Nº equivocado",c:"no"},
+  {v:"mudo",t:"Se mudó",c:"no"},{v:"fallecio",t:"Falleció",c:"no"},
+  {v:"nomas",t:"No quiere que lo contactemos",c:"no"}];
+const RES_IR = [{v:"estaba",t:"Estaba",c:"ok"},{v:"wsp",t:"Contestó el WhatsApp",c:"ok"},
+  {v:"cita",t:"Quedamos en hablar"},{v:"no2",t:"No estaba otra vez",c:"no"},
+  {v:"mudo",t:"Se mudó",c:"no"},{v:"noexiste",t:"No vive nadie / no existe",c:"no"},
+  {v:"fallecio",t:"Falleció",c:"no"},{v:"nomas",t:"No quiere que pasemos",c:"no"}];
+const HABLO = {atendio:1, estaba:1, wsp:1};
+
+function htmlPeinado(){
+  const vs = vecinosPeinado(MIO);
+  const pila = n => (n||"").split(" ")[0];
+  return vs.map(v => {
+    const ll = v.fr === "llamar";
+    const habl = HABLO[get(v.dni,"res")];
+    const msg = (MIO.datos.mensaje||"").replace("{pila}", v.pila||"")
+                 .replace("{prom}", pila(MIO.nombre||""));
+    return `<div class="caja"><div class="cu">
+      <span class="tag ${ll?"v":"p"}">${ll?"Llamar":(v.fr==="visitar"?"Visitar":"Sin tocar")}</span>
+      <div class="nom" style="font-weight:650;font-size:16px;margin-top:6px">${esc(v.nom)}</div>
+      <div class="det nota">${esc(v.dom)}${v.b?" · "+esc(v.b):""}${v.edad?" · "+v.edad+" años":""}</div>
+      ${v.tel ? `<div class="tel"><div style="font-size:12px;font-weight:700;color:var(--na)">TELÉFONO</div>
+          <div class="n">${esc(v.tel)}</div>
+          <a class="b sec" style="display:block;text-align:center;text-decoration:none;margin-top:8px;padding:11px"
+             href="tel:${esc((v.tel||"").replace(/\D/g,""))}">Llamar</a>
+          ${v.wa && !v.raro ? `<a class="wa" target="_blank" rel="noopener"
+             href="https://wa.me/${esc(v.wa)}?text=${encodeURIComponent(msg)}"
+             onclick="set('${v.dni}','wspenviado','si')">Escribirle por WhatsApp</a>` : ""}
+        </div>` : `<div class="nota" style="margin-top:8px">Sin teléfono: hay que ir.</div>`}
+      <div class="lb">¿Qué pasó?</div>
+      ${ops(v.dni,"res", ll?RES_LL:RES_IR)}
+      ${get(v.dni,"res")==="cita" ? `
+        <div class="lb">¿Cuándo quedaron?</div>
+        <div style="display:flex;gap:8px">
+          <input type="date" value="${esc(get(v.dni,"citafecha")||"")}"
+                 oninput="set('${v.dni}','citafecha',this.value)">
+          <input type="time" value="${esc(get(v.dni,"citahora")||"")}"
+                 oninput="set('${v.dni}','citahora',this.value)">
+        </div>` : ""}
+      ${habl ? `
+        <div class="lb">Adhesión a Maxi <span style="font-weight:400">· 1 nada · 5 mucha</span></div>
+        ${ops(v.dni,"maxi",[1,2,3,4,5].map(x=>({v:""+x,t:x})),"esc")}
+        <div class="lb">Adhesión a la gestión</div>
+        ${ops(v.dni,"gestion",[1,2,3,4,5].map(x=>({v:""+x,t:x})),"esc")}
+        <div class="lb">¿Se suma?</div>
+        ${ops(v.dni,"suma",[{v:"si",t:"Sí",c:"ok"},{v:"talvez",t:"Tal vez"},{v:"no",t:"No",c:"no"}])}
+        <div class="lb">¿A qué?</div>
+        <input value="${esc(get(v.dni,"aque")||"")}" placeholder="recorrida, mesa, difusión, un oficio…"
+               oninput="set('${v.dni}','aque',this.value)">
+        ${v.tel ? `<div class="lb">El teléfono, ¿está bien?</div>
+          ${ops(v.dni,"telok",[{v:"si",t:"Está bien",c:"ok"},{v:"no",t:"Es otro",c:"no"}])}` : ""}
+        <input style="margin-top:8px" inputmode="tel" placeholder="Teléfono nuevo, si es otro"
+               value="${esc(get(v.dni,"telnuevo")||"")}" oninput="set('${v.dni}','telnuevo',this.value)">
+        <div class="lb">Mejor horario para volver a hablarle</div>
+        <input value="${esc(get(v.dni,"horario")||"")}" placeholder="a la mañana, después de las 20…"
+               oninput="set('${v.dni}','horario',this.value)">` : ""}
+      <div class="lb">Notas</div>
+      <textarea oninput="set('${v.dni}','notas',this.value)">${esc(get(v.dni,"notas")||"")}</textarea>
+    </div></div>`;
+  }).join("") + `
+    <div class="aviso">Cuando termines, tocá <b>Enviar</b> y mandalo al grupo.</div>
+    <div class="nota">Nunca justifiques el llamado con lo que sabemos de la persona, y hacé la
+      propuesta solo si muestra interés. Ley 25.326: no compartas la pantalla.</div>`;
+}
+
+/* ─────────────────────────────── salida ─────────────────────────────── */
+const CAB_V = ["promotor","ficha","manzana","domicilio","dni","apellido y nombre","vive aca",
+  "adhesion maxi","adhesion gestion","telefono que figura","telefono confirmado",
+  "telefono nuevo","se suma","notas"];
+const CAB_P = ["promotor","frente","ficha","manzana","domicilio","dni","apellido y nombre","barrio",
+  "telefono que figura","le escribi","resultado","quedamos fecha","quedamos hora",
+  "adhesion maxi","adhesion gestion","se suma","a que",
+  "telefono confirmado","telefono nuevo","mejor horario","notas"];
+
+function filas(){
+  const lim = s => String(s==null?"":s).replace(/\n/g," ");
+  if(JOR.tipo === "visita"){
+    const out = [];
+    MIO.datos.forEach(f => f.puertas.forEach((pu,i) => {
+      const v = get("d"+f.n+"_"+i, "vive") || "";
+      pu.gente.forEach(g => out.push([MIO.prom, f.n, pu.mz, pu.dom, g.dni, g.nom, v,
+        get(g.dni,"maxi")||"", get(g.dni,"gestion")||"", g.tel||"",
+        get(g.dni,"telok")||"", get(g.dni,"telnuevo")||"", get(g.dni,"suma")||"",
+        lim(get(g.dni,"notas"))]));
+    }));
+    return out;
+  }
+  return vecinosPeinado(MIO).map(v => [MIO.prom, v.fr, v.ficha, v.mz, v.dom, v.dni, v.nom, v.b, v.tel,
+    get(v.dni,"wspenviado")||"", get(v.dni,"res")||"",
+    get(v.dni,"citafecha")||"", get(v.dni,"citahora")||"",
+    get(v.dni,"maxi")||"", get(v.dni,"gestion")||"", get(v.dni,"suma")||"",
+    get(v.dni,"aque")||"", get(v.dni,"telok")||"", get(v.dni,"telnuevo")||"",
+    get(v.dni,"horario")||"", lim(get(v.dni,"notas"))]);
+}
+const cab = () => JOR.tipo === "visita" ? CAB_V : CAB_P;
+const marca = () => (JOR.tipo === "visita" ? "RECORRIDA PROMOTOR " : "PEINADO PROMOTOR ") + MIO.prom;
+function csv(){
+  return [cab(), ...filas()].map(f => f.map(x => `"${String(x==null?"":x).replace(/"/g,'""')}"`)
+         .join(";")).join("\n");
+}
+function bloque(){ return marca() + "\n" + csv(); }
+function nombreArch(){
+  return (JOR.tipo==="visita" ? "recorrida" : "peinado") + " promotor "
+       + String(MIO.prom).padStart(2,"0") + ".csv";
+}
+function blob(){ return new Blob(["﻿"+csv()], {type:"text/csv;charset=utf-8"}); }
+function marcarEnviado(){
+  R._enviado = new Date().toLocaleString("es-AR");
+  guardar();
+  $("enviado").textContent = "Enviado " + R._enviado;
+}
+function mostrarTexto(){
+  $("mtxt").value = bloque();
+  $("modal").classList.add("on");
+  marcarEnviado();
+}
+$("mcerrar").onclick = () => $("modal").classList.remove("on");
+$("mcopiar").onclick = () => {
+  const t = $("mtxt"); t.removeAttribute("readonly");
+  t.focus(); t.select(); t.setSelectionRange(0, 999999);
+  try{ document.execCommand("copy"); }catch(e){}
+  t.setAttribute("readonly","");
+};
+$("mtxt").onclick = e => e.target.select();
+$("btexto").onclick = () => mostrarTexto();
+$("benviar").onclick = async () => {
+  const arch = new File([blob()], nombreArch(), {type:"text/csv"});
+  if(navigator.canShare && navigator.canShare({files:[arch]})){
+    try{ await navigator.share({files:[arch], title:nombreArch()}); marcarEnviado(); return; }
+    catch(e){ if(e.name === "AbortError") return; }
+  }
+  if(navigator.share){
+    try{ await navigator.share({text:bloque()}); marcarEnviado(); return; }
+    catch(e){ if(e.name === "AbortError") return; }
+  }
+  try{ await navigator.clipboard.writeText(bloque());
+       alert("Copiado. Pegalo en el WhatsApp del grupo."); marcarEnviado(); return; }catch(e){}
+  mostrarTexto();
+};
+
+/* ─────────────────────────────── arranque ─────────────────────────────── */
+async function arranque(){
+  if(!CODIGO){ ver("pEntrar"); return; }
+  $("titulo").textContent = "Buscando tus jornadas…";
+  const {jornadas} = await sincronizar();
+  if(!jornadas.length){ CODIGO = ""; G.del(LL.codigo); ver("pEntrar"); return; }
+  pintarJornadas(jornadas);
+}
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+arranque();
+</script>
+</body>
+</html>
