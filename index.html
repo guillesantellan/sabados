@@ -52,6 +52,10 @@ button.b:disabled{opacity:.5}
      background:var(--su);color:var(--g)}
 .tag.v{background:#EAF7EE;color:var(--ok)} .tag.p{background:#FDF1EA;color:var(--na)}
 .pu{border-top:3px solid var(--az)}
+.pu.falta{border-top-color:var(--na);background:#FFFBF8}
+.pu.falta h3::after{content:" · falta decir si vive acá";font-size:12.5px;font-weight:600;
+     color:var(--na)}
+.lb.urge{color:var(--na);font-weight:700}
 .pu h3{margin:0;padding:12px 14px 8px;font-size:17px;font-weight:660}
 .per{border-top:1px solid var(--su);padding:12px 14px}
 .per .nom{font-weight:650;font-size:15.5px}
@@ -394,10 +398,11 @@ function htmlVisita(){
       </div>
       ${f.puertas.map((pu,i) => {
         const k = "d"+f.n+"_"+i;
-        return `<div class="pu">
+        const sinVive = !get(k,"vive");
+        return `<div class="pu${sinVive?" falta":""}">
           <h3>${i+1}. ${esc(pu.dom || "SIN DOMICILIO")}</h3>
           <div class="cu" style="padding-top:0">
-            <div class="lb">¿Vive acá?</div>
+            <div class="lb${sinVive?" urge":""}">¿Vive acá?</div>
             ${ops(k,"vive",[{v:"si",t:"Sí",c:"ok"},{v:"mudo",t:"Se mudó",c:"no"},
                             {v:"noestaba",t:"No estaba"},{v:"desconocen",t:"No lo conocen",c:"no"}])}
           </div>
@@ -429,6 +434,10 @@ function htmlVisita(){
         </div>`;
       }).join("")}
     </div>`).join("") + `
+    ${(()=>{const t=contarTotal(JOR), h=contarHechos(JOR,R);
+      return h<t ? `<div class="aviso"><b>Te faltan ${t-h} de ${t} timbres sin contestar
+        «¿Vive acá?»</b> — están marcados en naranja más arriba. Es el dato con el que después
+        sabemos si el vecino sigue viviendo ahí.</div>` : "";})()}
     <div class="aviso">Cuando termines, tocá <b>Enviar</b> y mandalo al grupo. Si no lo mandás,
       lo que cargaste queda solo en tu teléfono.</div>
     <div class="nota">Son datos personales protegidos por la Ley 25.326: no le muestres la
