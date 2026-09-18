@@ -7,7 +7,8 @@
    "titulo": "Sábado 19 de septiembre · La Loma, Uta, 25 de Noviembre",
    "fecha": "2026-09-19",
    "archivo": "2026-09-19-visita.json",
-   "promotores": 70
+   "promotores": 71,
+   "sello": "20260918122523"
   },
   {
    "id": "2026-08-22-visita",
@@ -32,5 +33,5 @@
    "cerrada": true
   }
  ],
- "actualizado": "2026-09-17T20:56:39"
+ "actualizado": "2026-09-18T12:25:23"
 }
