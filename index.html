@@ -92,6 +92,20 @@ button.b:disabled{opacity:.5}
 .mfila button{width:auto;padding:11px 15px;border-radius:10px;border:0;background:var(--az);
      color:#fff;font-size:14px;font-weight:650}
 .mfila button.sec{background:var(--su);color:var(--tx);border:1px solid var(--bo)}
+/* el resumen: lo que el promotor ya cargó, para leerlo de un vistazo */
+.chips{margin:5px 0 0}
+.chip{display:inline-block;border-radius:20px;padding:3px 10px;font-size:12.5px;margin:0 5px 5px 0;
+     background:var(--su);color:var(--tx);border:1px solid var(--bo)}
+.chip.ok{background:#EAF7EE;color:var(--ok);border-color:#bfe3cb;font-weight:650}
+.chip.no{background:#FDF1EA;color:var(--na);border-color:#e8c6b3;font-weight:650}
+.chip.vacio{background:#fff;color:var(--g);border-style:dashed}
+.gris{opacity:.5}
+.cita{font-size:13px;background:var(--su);border-radius:9px;padding:8px 10px;margin-top:7px;
+     line-height:1.45;white-space:pre-wrap}
+.cifras{display:flex;gap:8px;margin-top:10px}
+.cifras div{flex:1;background:var(--su);border-radius:10px;padding:9px 10px;text-align:center}
+.cifras b{display:block;font-size:21px;font-weight:700;line-height:1.2}
+.cifras span{font-size:11.5px;color:var(--g);line-height:1.3;display:block}
 .oculto{display:none}
 details>summary{cursor:pointer;font-size:13px;color:var(--g);padding:4px 0;list-style-position:inside}
 </style>
@@ -146,6 +160,7 @@ details>summary{cursor:pointer;font-size:13px;color:var(--g);padding:4px 0;list-
   <div class="pie">
     <div class="p"><span id="prog"></span> <span id="guardado"></span><br><span id="enviado"></span></div>
     <button class="sec" id="btexto">Copiar</button>
+    <button class="sec oculto" id="beditar">Editar</button>
     <button id="benviar">Enviar</button>
   </div>
 </div>
@@ -195,6 +210,7 @@ let CODIGO = G.get(LL.codigo, "");
 let JOR = null;        // la jornada abierta
 let MIO = null;        // mis datos descifrados
 let R = {};            // lo cargado
+let EDIT = true;       // false = mirando el resumen de una jornada que ya pasó
 let okGuardar = true;
 
 /* ─────────────────────────────── descifrar ─────────────────────────────── */
@@ -234,14 +250,40 @@ async function sincronizar(){
   const mias = [];
   for(const j of ind.jornadas){
     const ya = G.get(LL.datos(j.id), null);
-    if(ya){ mias.push({...j, datos:ya}); continue; }
+    /* El sello cambia cuando la jornada se vuelve a publicar —por ejemplo cuando se le
+       cargan adentro las respuestas que el promotor ya había mandado—. Sin esto, el
+       teléfono que la tenía guardada se quedaría para siempre con la versión vieja. */
+    if(ya && (!j.sello || ya._sello === j.sello)){ mias.push({...j, datos:ya}); continue; }
     try{
       const arch = await bajar("jornadas/" + j.archivo);
       const mio = await abrir(arch, CODIGO);
-      if(mio){ G.set(LL.datos(j.id), mio); mias.push({...j, datos:mio}); }
-    }catch(e){ /* sin red o no es mía: se ignora */ }
+      if(mio){
+        mio._sello = j.sello || "";
+        G.set(LL.datos(j.id), mio);
+        sembrar(j.id, mio);
+        mias.push({...j, datos:mio});
+        continue;
+      }
+    }catch(e){ /* sin red: se sigue con lo que haya */ }
+    if(ya) mias.push({...j, datos:ya});
   }
   return {jornadas:mias};
+}
+function sembrar(id, mio){
+  /* Lo que el promotor mandó en su momento vuelve adentro de su bloque cifrado, y acá se
+     copia a lo que tiene cargado en el teléfono. No pisa nada: si en el teléfono ya hay
+     un valor, ese gana, porque es el más nuevo. */
+  if(!mio || !mio.resp) return;
+  const c = G.get(LL.carga(id), {});
+  for(const k in mio.resp){
+    if(k === "_enviado"){ if(!c._enviado) c._enviado = mio.resp[k]; continue; }
+    const v = mio.resp[k];
+    if(!v || typeof v !== "object") continue;
+    c[k] = c[k] || {};
+    for(const campo in v) if(!c[k][campo]) c[k][campo] = v[campo];
+  }
+  c._recibido = mio.recibido || c._recibido || "";
+  G.set(LL.carga(id), c);
 }
 
 /* ─────────────────────────────── pantallas ─────────────────────────────── */
@@ -285,10 +327,13 @@ function estadoJornada(j){
   const c = G.get(LL.carga(j.id), {});
   const tot = contarTotal(j);
   const hechos = contarHechos(j, c);
-  if(c._enviado) return {t:"Enviada " + c._enviado, cl:"v"};
+  /* _enviado puede ser la fecha o simplemente true, cuando sabemos que la mandó pero no
+     el día exacto (las planillas viejas llegaron por WhatsApp, sin fecha confiable). */
+  if(c._enviado) return {t:"Enviada" + cuando(c._enviado), cl:"v"};
   if(hechos === 0) return {t:"Sin empezar", cl:""};
   return {t:`${hechos} de ${tot} cargados`, cl:"p"};
 }
+const cuando = v => (typeof v === "string" && v) ? " " + v : "";
 function contarTotal(j){
   if(j.tipo === "visita") return j.datos.datos.reduce((a,f)=>a+f.npuertas, 0);
   return (j.datos.v || vecinosPeinado(j.datos)).length;
@@ -353,11 +398,15 @@ function pintarJornadas(jornadas){
 }
 
 /* ─────────────────────────────── trabajo ─────────────────────────────── */
+function cerrada(){ return !!(JOR && (JOR.cerrada || R._recibido)); }
 function abrirJornada(j){
   JOR = j; MIO = j.datos; R = G.get(LL.carga(j.id), {});
+  /* Una jornada que ya pasó abre mostrando lo que hizo, no un formulario en blanco.
+     Una jornada nueva abre lista para cargar. */
+  EDIT = !cerrada();
   $("titulo").textContent = j.titulo;
   $("sub").textContent = "Promotor " + MIO.prom + (MIO.nombre ? " · " + MIO.nombre : "");
-  $("enviado").textContent = R._enviado ? "Enviado " + R._enviado : "";
+  $("enviado").textContent = R._enviado ? "Enviado" + cuando(R._enviado) : "";
   pintarTrabajo();
   ver("pTrabajo");
 }
@@ -381,9 +430,23 @@ function ops(k, campo, lista, clase){
 window.pintarTrabajo = pintarTrabajo;
 
 function pintarTrabajo(){
-  $("cont").innerHTML = JOR.tipo === "visita" ? htmlVisita() : htmlPeinado();
+  const avisa = (EDIT && cerrada())
+    ? `<div class="aviso az">Estás editando una jornada que ya pasó. Lo que agregues queda
+       guardado en tu teléfono; para que nos llegue, tocá <b>Enviar de nuevo</b> abajo.</div>`
+    : "";
+  $("cont").innerHTML = (!EDIT && cerrada()) ? htmlResumen()
+      : avisa + (JOR.tipo === "visita" ? htmlVisita() : htmlPeinado());
   pintarProg();
+  pintarPie();
 }
+function pintarPie(){
+  const c = cerrada();
+  $("beditar").classList.toggle("oculto", !c);
+  $("beditar").textContent = EDIT ? "Ver lo cargado" : "Editar";
+  $("btexto").classList.toggle("oculto", c);     // en una jornada vieja el pie no entra de a tres
+  $("benviar").textContent = R._enviado ? "Enviar de nuevo" : "Enviar";
+}
+$("beditar").onclick = () => { EDIT = !EDIT; pintarTrabajo(); window.scrollTo(0,0); };
 function pintarProg(){
   const tot = contarTotal(JOR), h = contarHechos(JOR, R);
   $("prog").textContent = `${h} de ${tot}`;
@@ -510,6 +573,97 @@ function htmlPeinado(){
     <div class="aviso">Cuando termines, tocá <b>Enviar</b> y mandalo al grupo.</div>
     <div class="nota">Nunca justifiques el llamado con lo que sabemos de la persona, y hacé la
       propuesta solo si muestra interés. Ley 25.326: no compartas la pantalla.</div>`;
+}
+
+/* ─── resumen: lo que ya cargó, para una jornada que pasó ───
+   El promotor que sale un sábado y manda su planilla, semanas después abre la app y la ve
+   en blanco: lo que cargó se fue en el CSV, no quedó en el teléfono. Acá se lo devolvemos.
+   Se lee, no se toca; el botón Editar abre el mismo formulario de siempre. */
+const TXT_VIVE  = {si:"Vive acá", mudo:"Se mudó", noestaba:"No estaba",
+                   desconocen:"En la casa no lo conocen"};
+const TXT_SUMA  = {si:"Se suma", talvez:"Tal vez", no:"No se suma"};
+const TXT_TELOK = {si:"teléfono confirmado", no:"el teléfono es otro"};
+const txtRes = v => (RES_LL.concat(RES_IR).find(o => o.v === v) || {}).t || v;
+const chip = (t, c) => `<span class="chip ${c||""}">${esc(t)}</span>`;
+
+function chipsPersona(d){
+  const ch = [];
+  if(d.maxi)     ch.push(chip("Maxi " + d.maxi, d.maxi>=4?"ok":d.maxi<=2?"no":""));
+  if(d.gestion)  ch.push(chip("Gestión " + d.gestion, d.gestion>=4?"ok":d.gestion<=2?"no":""));
+  if(d.suma)     ch.push(chip(TXT_SUMA[d.suma] || d.suma,
+                              d.suma==="si"?"ok":d.suma==="no"?"no":""));
+  if(d.aque)     ch.push(chip(d.aque));
+  if(d.telok)    ch.push(chip(TXT_TELOK[d.telok] || d.telok, d.telok==="no"?"no":""));
+  if(d.telnuevo) ch.push(chip("tel. " + d.telnuevo, "ok"));
+  if(d.horario)  ch.push(chip("mejor: " + d.horario));
+  return ch;
+}
+function bloquePersona(nom, det, d){
+  const ch = chipsPersona(d);
+  const algo = ch.length || d.notas;
+  return `<div class="per${algo?"":" gris"}">
+    <div class="nom">${esc(nom)}</div>
+    ${det ? `<div class="det">${esc(det)}</div>` : ""}
+    ${ch.length ? `<div class="chips">${ch.join("")}</div>`
+                : `<div class="det">${d.notas?"":"sin cargar"}</div>`}
+    ${d.notas ? `<div class="cita">${esc(d.notas)}</div>` : ""}
+  </div>`;
+}
+function cifras(){
+  const tot = contarTotal(JOR), h = contarHechos(JOR, R);
+  const gente = Object.keys(R).filter(k => /^\d+$/.test(k) && chipsPersona(R[k]).length).length;
+  return `<div class="cifras">
+    <div><b>${h}</b><span>de ${tot} ${JOR.tipo==="visita"?"timbres contestados":"vecinos con resultado"}</span></div>
+    <div><b>${gente}</b><span>vecinos con datos cargados</span></div>
+  </div>`;
+}
+function htmlResumen(){
+  const algo = contarHechos(JOR, R) > 0
+            || Object.keys(R).some(k => /^\d+$/.test(k) && chipsPersona(R[k]).length);
+  const cab = algo
+    ? `<div class="caja"><div class="cu">
+         <h2>Lo que cargaste</h2>
+         <p class="nota">${!R._recibido ? "Es lo que quedó guardado en este teléfono."
+            : "Es la planilla que mandaste al grupo"
+              + (cuando(R._recibido) ? " el " + esc(R._recibido) : "") + "."}
+            Si te acordás de algo o querés corregir un dato, tocá <b>Editar</b>.</p>
+         ${cifras()}
+       </div></div>`
+    : `<div class="caja"><div class="cu">
+         <h2>De esta jornada no nos llegó tu planilla</h2>
+         <p class="nota">Puede ser que ese día no hayas salido, o que lo hayas anotado en papel.
+           Si tenés los datos, tocá <b>Editar</b> y cargalos ahora: sirven igual.</p>
+       </div></div>`;
+  return cab + (JOR.tipo === "visita" ? resVisita() : resPeinado()) + `
+    <div class="nota">Son datos personales protegidos por la Ley 25.326: no le muestres la
+      pantalla a nadie que no sea del equipo.</div>`;
+}
+function resVisita(){
+  return MIO.datos.map(f => `<div class="caja">` + f.puertas.map((pu,i) => {
+    const k = "d"+f.n+"_"+i, v = get(k,"vive");
+    return `<div class="pu">
+      <h3>${i+1}. ${esc(pu.dom || "SIN DOMICILIO")}</h3>
+      <div class="cu" style="padding-top:0">
+        ${v ? chip(TXT_VIVE[v] || v, v==="si"?"ok":"no") : chip("sin contestar","vacio")}
+      </div>
+      ${pu.gente.map(g => bloquePersona(g.nom, "DNI " + g.dni + (g.tel ? " · " + g.tel : ""),
+                                        R[g.dni] || {})).join("")}
+    </div>`;
+  }).join("") + `</div>`).join("");
+}
+function resPeinado(){
+  return vecinosPeinado(MIO).map(v => {
+    const d = R[v.dni] || {};
+    const cita = d.citafecha ? " · " + d.citafecha + (d.citahora ? " " + d.citahora : "") : "";
+    return `<div class="caja"><div class="cu">
+      <span class="tag ${v.fr==="llamar"?"v":"p"}">${v.fr==="llamar"?"Llamar":(v.fr==="visitar"?"Visitar":"Sin tocar")}</span>
+      <div style="margin-top:6px">
+        ${d.res ? chip(txtRes(d.res) + cita, HABLO[d.res]?"ok":"no") : chip("sin contestar","vacio")}
+        ${d.wspenviado==="si" ? chip("le escribió") : ""}
+      </div>
+      ${bloquePersona(v.nom, v.dom + (v.b ? " · " + v.b : ""), d)}
+    </div></div>`;
+  }).join("");
 }
 
 /* ─────────────────────────────── salida ─────────────────────────────── */
