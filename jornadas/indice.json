@@ -16,7 +16,9 @@
    "titulo": "Sábado 22 de agosto · Barrio Sarmiento",
    "fecha": "2026-08-22",
    "archivo": "2026-08-22-visita.json",
-   "promotores": 70
+   "promotores": 70,
+   "sello": "20260917205633",
+   "cerrada": true
   },
   {
    "id": "2026-08-22-peinado",
@@ -25,8 +27,10 @@
    "titulo": "Peinado del 22 de agosto",
    "fecha": "2026-08-22",
    "archivo": "2026-08-22-peinado.json",
-   "promotores": 62
+   "promotores": 62,
+   "sello": "20260917205639",
+   "cerrada": true
   }
  ],
- "actualizado": "2026-09-17T19:14:41"
+ "actualizado": "2026-09-17T20:56:39"
 }
