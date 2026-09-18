@@ -72,6 +72,8 @@ button.b:disabled{opacity:.5}
 .tel .n{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
 .wa{display:block;text-align:center;background:#25D366;color:#fff;font-weight:650;padding:12px;
     border-radius:10px;text-decoration:none;margin-top:9px}
+.mal{background:#FBDFD3;border-radius:8px;padding:9px 11px;margin-top:8px;font-size:13px;
+    color:var(--na);font-weight:600;line-height:1.45}
 .pie{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--bo);
      padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center}
 .pie .p{flex:1;font-size:12.5px;color:var(--g);line-height:1.35}
@@ -461,6 +463,19 @@ function pintarProg(){
   $("prog").textContent = `${h} de ${tot}`;
 }
 
+/* ─── teléfonos mal anotados en el padrón ───
+   Un número al que le falta o le sobra un dígito se lee como cualquier otro en la pantalla, y
+   el promotor lo confirma de buena fe. Después no se puede llamar a nadie. Un teléfono nuestro
+   son 10 dígitos —área y número—: lo que no da 10 está mal y hay que pedirlo de nuevo.
+   En el cuadrante del 19 de septiembre son 9 de 277. */
+const digitos = t => String(t == null ? "" : t).replace(/\D/g, "");
+const telRaro = t => { const d = digitos(t).length; return d > 0 && d !== 10; };
+function porQue(t){
+  const n = digitos(t).length, d = Math.abs(10 - n);
+  const plural = d > 1 ? d + " dígitos" : "un dígito";
+  return n < 10 ? "le falta " + plural : "tiene " + plural + " de más";
+}
+
 /* ─── visita: los timbres del sábado ─── */
 function htmlVisita(){
   return MIO.datos.map(f => `
@@ -486,11 +501,16 @@ function htmlVisita(){
                 ${g.ausente?'<span class="tag">no votó 2021</span>':""}</div>
               <div class="tel">
                 <div style="font-size:12px;font-weight:700;color:var(--na)">TELÉFONO</div>
-                ${g.tel ? `<div class="n">${esc(g.tel)}</div>
-                  <div class="lb" style="margin-top:6px">¿Es este?</div>
-                  ${ops(g.dni,"telok",[{v:"si",t:"Está bien",c:"ok"},{v:"no",t:"Es otro",c:"no"}])}`
-                  : `<div class="n" style="color:var(--g);font-size:15px">no tenemos — pedíselo</div>`}
-                <input style="margin-top:8px" inputmode="tel" placeholder="${g.tel?"Anotá el nuevo":"Anotá el teléfono"}"
+                ${!g.tel
+                  ? `<div class="n" style="color:var(--g);font-size:15px">no tenemos — pedíselo</div>`
+                  : telRaro(g.tel)
+                  ? `<div class="n">${esc(g.tel)}</div>
+                     <div class="mal">Este número está mal anotado: ${porQue(g.tel)}.
+                       No lo confirmes — pedile el número y escribilo acá abajo.</div>`
+                  : `<div class="n">${esc(g.tel)}</div>
+                     <div class="lb" style="margin-top:6px">¿Es este?</div>
+                     ${ops(g.dni,"telok",[{v:"si",t:"Está bien",c:"ok"},{v:"no",t:"Es otro",c:"no"}])}`}
+                <input style="margin-top:8px" inputmode="tel" placeholder="${!g.tel?"Anotá el teléfono":telRaro(g.tel)?"Escribí el número correcto":"Anotá el nuevo"}"
                   value="${esc(get(g.dni,"telnuevo")||"")}" oninput="set('${g.dni}','telnuevo',this.value)">
               </div>
               <div class="lb">Adhesión a Maxi <span style="font-weight:400">· 1 nada · 5 mucha</span></div>
@@ -542,11 +562,14 @@ function htmlPeinado(){
       <div class="det nota">${esc(v.dom)}${v.b?" · "+esc(v.b):""}${v.edad?" · "+v.edad+" años":""}</div>
       ${v.tel ? `<div class="tel"><div style="font-size:12px;font-weight:700;color:var(--na)">TELÉFONO</div>
           <div class="n">${esc(v.tel)}</div>
-          <a class="b sec" style="display:block;text-align:center;text-decoration:none;margin-top:8px;padding:11px"
-             href="tel:${esc((v.tel||"").replace(/\D/g,""))}">Llamar</a>
+          ${telRaro(v.tel) ? `<div class="mal">Este número está mal anotado: ${porQue(v.tel)}.
+              Así no se puede llamar. Si lo conseguís por otro lado, escribilo más abajo;
+              si no, hay que pasar por la casa.</div>`
+            : `<a class="b sec" style="display:block;text-align:center;text-decoration:none;margin-top:8px;padding:11px"
+             href="tel:${esc(digitos(v.tel))}">Llamar</a>
           ${v.wa && !v.raro ? `<a class="wa" target="_blank" rel="noopener"
              href="https://wa.me/${esc(v.wa)}?text=${encodeURIComponent(msg)}"
-             onclick="set('${v.dni}','wspenviado','si')">Escribirle por WhatsApp</a>` : ""}
+             onclick="set('${v.dni}','wspenviado','si')">Escribirle por WhatsApp</a>` : ""}`}
         </div>` : `<div class="nota" style="margin-top:8px">Sin teléfono: hay que ir.</div>`}
       <div class="lb">¿Qué pasó?</div>
       ${ops(v.dni,"res", ll?RES_LL:RES_IR)}
@@ -568,7 +591,7 @@ function htmlPeinado(){
         <div class="lb">¿A qué?</div>
         <input value="${esc(get(v.dni,"aque")||"")}" placeholder="recorrida, mesa, difusión, un oficio…"
                oninput="set('${v.dni}','aque',this.value)">
-        ${v.tel ? `<div class="lb">El teléfono, ¿está bien?</div>
+        ${v.tel && !telRaro(v.tel) ? `<div class="lb">El teléfono, ¿está bien?</div>
           ${ops(v.dni,"telok",[{v:"si",t:"Está bien",c:"ok"},{v:"no",t:"Es otro",c:"no"}])}` : ""}
         <input style="margin-top:8px" inputmode="tel" placeholder="Teléfono nuevo, si es otro"
                value="${esc(get(v.dni,"telnuevo")||"")}" oninput="set('${v.dni}','telnuevo',this.value)">
@@ -690,9 +713,12 @@ function filas(){
     const out = [];
     MIO.datos.forEach(f => f.puertas.forEach((pu,i) => {
       const v = get("d"+f.n+"_"+i, "vive") || "";
+      /* un número mal anotado nunca sale como confirmado, aunque lo hayan tildado antes de
+         que la app empezara a avisarlo */
       pu.gente.forEach(g => out.push([MIO.prom, f.n, pu.mz, pu.dom, g.dni, g.nom, v,
         get(g.dni,"maxi")||"", get(g.dni,"gestion")||"", g.tel||"",
-        get(g.dni,"telok")||"", get(g.dni,"telnuevo")||"", get(g.dni,"suma")||"",
+        telRaro(g.tel) ? "" : (get(g.dni,"telok")||""),
+        get(g.dni,"telnuevo")||"", get(g.dni,"suma")||"",
         lim(get(g.dni,"notas"))]));
     }));
     return out;
@@ -701,7 +727,7 @@ function filas(){
     get(v.dni,"wspenviado")||"", get(v.dni,"res")||"",
     get(v.dni,"citafecha")||"", get(v.dni,"citahora")||"",
     get(v.dni,"maxi")||"", get(v.dni,"gestion")||"", get(v.dni,"suma")||"",
-    get(v.dni,"aque")||"", get(v.dni,"telok")||"", get(v.dni,"telnuevo")||"",
+    get(v.dni,"aque")||"", telRaro(v.tel) ? "" : (get(v.dni,"telok")||""), get(v.dni,"telnuevo")||"",
     get(v.dni,"horario")||"", lim(get(v.dni,"notas"))]);
 }
 const cab = () => JOR.tipo === "visita" ? CAB_V : CAB_P;
