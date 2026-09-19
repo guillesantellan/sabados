@@ -10,7 +10,7 @@
    - las jornadas van de red primero: si hay internet, trae la última versión;
      si no, la que tenga guardada. Es la única parte que puede cambiar seguido.
 */
-const VERSION = "v12";
+const VERSION = "v13";
 const CACHE = "recorrida-" + VERSION;
 const ARMAZON = ["./", "./index.html", "./manifest.webmanifest",
                  "./icono-192.png", "./icono-512.png", "./icono-180.png"];
