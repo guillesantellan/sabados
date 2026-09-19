@@ -204,6 +204,7 @@ const LL = {
   codigo: "recorrida.codigo",
   datos:  id => "recorrida.datos." + id,     // lo descifrado
   carga:  id => "recorrida.carga." + id,     // lo que va cargando
+  cero:   id => "recorrida.cero." + id,      // qué «puesta en cero» ya aplicó este teléfono
   indice: "recorrida.indice"
 };
 const G = {
@@ -258,6 +259,15 @@ async function sincronizar(){
   let ind;
   try{ ind = await bajar("jornadas/indice.json"); G.set(LL.indice, ind); }
   catch(e){ ind = G.get(LL.indice, null); if(!ind) return {jornadas:[], sinRed:true}; }
+  /* Poner en cero. Si el índice trae un «cero» distinto del que este teléfono ya aplicó,
+     se borra lo cargado de esa jornada: queda como recién bajada. Es la única forma de
+     limpiar las pruebas en los celulares de todos sin pedirle nada a nadie. Se hace antes
+     de descifrar, así también alcanza al que todavía no abrió la jornada nueva. */
+  for(const j of (ind.jornadas || [])){
+    if(!j.cero || G.get(LL.cero(j.id), "") === j.cero) continue;
+    G.del(LL.carga(j.id));
+    G.set(LL.cero(j.id), j.cero);
+  }
   const mias = [];
   for(const j of ind.jornadas){
     const ya = G.get(LL.datos(j.id), null);
