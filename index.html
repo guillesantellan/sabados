@@ -5,6 +5,7 @@
 <meta name="google-site-verification" content="XM0_ak2-JmWcqfPUD3s-ifA3nbgFXxPhK7-u9GXLCN4" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Recorrida</title>
+<meta name="description" content="Herramienta interna de recorrida territorial en Olavarría para el equipo de promotores. No pide contraseñas ni datos de otras cuentas.">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1F3864">
 <meta name="mobile-web-app-capable" content="yes">
@@ -132,6 +133,12 @@ details>summary{cursor:pointer;font-size:13px;color:var(--g);padding:4px 0;list-
 <div class="wrap" id="pEntrar">
   <div id="inst1"></div>
   <div class="caja"><div class="cu">
+    <p class="nota" style="margin-top:0"><b>Recorrida territorial · Olavarría.</b> Herramienta
+      interna del equipo de promotores para registrar las visitas casa por casa. La administra
+      Guillermo Santellán. No pide contraseñas, datos bancarios ni cuentas de Google, WhatsApp
+      u otros servicios: solo el código que te da el responsable de tu grupo.</p>
+  </div></div>
+  <div class="caja"><div class="cu">
     <h2>Tu código</h2>
     <p class="nota">Es el que te dieron en la reunión. Se escribe una sola vez: después la app
       te reconoce sola y te van apareciendo las jornadas nuevas.</p>
@@ -145,6 +152,9 @@ details>summary{cursor:pointer;font-size:13px;color:var(--g);padding:4px 0;list-
     <div class="nota"><b>¿Para qué sirve el código?</b> Los datos de los vecinos viajan cifrados.
       Con tu código se abre solo tu parte: nadie más ve tus timbres y vos no ves los de los demás.
       Si lo perdés, pedile uno nuevo al responsable de tu grupo.</div>
+    <div class="nota" style="margin-top:8px"><b>Tus datos y los de los vecinos.</b> Lo que se
+      carga queda guardado en tu teléfono y llega al equipo solo cuando vos lo enviás al grupo.
+      Se usa únicamente para el trabajo territorial del equipo y no se comparte afuera.</div>
   </div></div>
 </div>
 
@@ -193,7 +203,7 @@ details>summary{cursor:pointer;font-size:13px;color:var(--g);padding:4px 0;list-
 /* ═══════════════════════════════════════════════════════════════════════════
    La app de la recorrida.
 
-   Todo lo que se publica en GitHub está cifrado: cada promotor tiene su bloque,
+   Todo lo que se publica está cifrado: cada promotor tiene su bloque,
    con una clave que sale de su propio código (PBKDF2 + AES-GCM, con WebCrypto,
    que anda en iPhone y en Android). Sin código, los archivos no dicen nada.
 
@@ -247,6 +257,23 @@ async function abrir(jornada, codigo){
   const claro = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64a(bl.iv)}, clave, b64a(bl.ct));
   return JSON.parse(new TextDecoder().decode(claro));
 }
+/* Jornadas nuevas: el archivo con todos los bloques ya no está en GitHub sino en el servidor
+   de Google, que le da a cada uno SOLO su bloque. La sal y las vueltas vienen en el índice;
+   con eso sale la etiqueta, se la pide al servidor y se descifra acá, igual que antes. */
+async function abrirRemoto(servidor, j, codigo){
+  const {clave, etiqueta} = await derivar(codigo, j.kdf.sal, j.kdf.iter);
+  const url = servidor + (servidor.includes("?") ? "&" : "?") +
+              "j=" + encodeURIComponent(j.id) + "&e=" + etiqueta;
+  const r = await fetch(url, {cache:"no-store", redirect:"follow"});
+  if(!r.ok) throw new Error("servidor " + r.status);
+  const d = await r.json();
+  if(!d.ok){
+    if(d.error === "sin bloque") return null;          // ese código no está en esta jornada
+    throw new Error(d.error || "servidor");             // cualquier otra cosa: como sin red
+  }
+  const claro = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64a(d.iv)}, clave, b64a(d.ct));
+  return JSON.parse(new TextDecoder().decode(claro));
+}
 
 /* ─────────────────────────────── traer del servidor ─────────────────────────────── */
 async function bajar(url){
@@ -270,6 +297,7 @@ async function sincronizar(){
     G.set(LL.cero(j.id), j.cero);
   }
   const mias = [];
+  let fallo = false;       // no se pudo preguntar (sin señal, servidor caído): no es «código malo»
   for(const j of ind.jornadas){
     const ya = G.get(LL.datos(j.id), null);
     /* El sello cambia cuando la jornada se vuelve a publicar —por ejemplo cuando se le
@@ -277,8 +305,13 @@ async function sincronizar(){
        teléfono que la tenía guardada se quedaría para siempre con la versión vieja. */
     if(ya && (!j.sello || ya._sello === j.sello)){ mias.push({...j, datos:ya}); continue; }
     try{
-      const arch = await bajar("jornadas/" + j.archivo);
-      const mio = await abrir(arch, CODIGO);
+      let mio;
+      if(j.remoto && ind.servidor){
+        mio = await abrirRemoto(ind.servidor, j, CODIGO);
+      }else{
+        const arch = await bajar("jornadas/" + j.archivo);
+        mio = await abrir(arch, CODIGO);
+      }
       if(mio){
         mio._sello = j.sello || "";
         G.set(LL.datos(j.id), mio);
@@ -286,10 +319,10 @@ async function sincronizar(){
         mias.push({...j, datos:mio});
         continue;
       }
-    }catch(e){ /* sin red: se sigue con lo que haya */ }
+    }catch(e){ fallo = true; /* sin red: se sigue con lo que haya */ }
     if(ya) mias.push({...j, datos:ya});
   }
-  return {jornadas:mias};
+  return {jornadas:mias, sinRed:fallo};
 }
 function sembrar(id, mio){
   /* Lo que el promotor mandó en su momento vuelve adentro de su bloque cifrado, y acá se
@@ -327,7 +360,7 @@ $("entrar").onclick = async () => {
   if(!jornadas.length){
     CODIGO = "";
     err.innerHTML = sinRed
-      ? "No hay internet y todavía no bajaste nada. Conectate una vez y volvé a probar."
+      ? "No se pudo conectar para bajar tu jornada. Conectate a internet y volvé a probar."
       : "Ese código no abre ninguna jornada. Fijate que esté bien escrito, o pedile otro al responsable de tu grupo.";
     err.classList.remove("oculto");
     return;
@@ -791,8 +824,21 @@ $("benviar").onclick = async () => {
 async function arranque(){
   if(!CODIGO){ ver("pEntrar"); return; }
   $("titulo").textContent = "Buscando tus jornadas…";
-  const {jornadas} = await sincronizar();
-  if(!jornadas.length){ CODIGO = ""; G.del(LL.codigo); ver("pEntrar"); return; }
+  const {jornadas, sinRed} = await sincronizar();
+  if(!jornadas.length){
+    if(sinRed){
+      /* No se pudo preguntar: el código se guarda, no se lo hacemos escribir de nuevo. */
+      $("titulo").textContent = "Recorrida";
+      const err = $("errEntrar");
+      err.textContent = "No se pudo conectar para bajar tu jornada. Probá de nuevo con señal.";
+      err.classList.remove("oculto");
+      $("codigo").value = CODIGO;
+      CODIGO = "";
+      ver("pEntrar");
+      return;
+    }
+    CODIGO = ""; G.del(LL.codigo); ver("pEntrar"); return;
+  }
   pintarJornadas(jornadas);
 }
 /* ─────────────────────────────── instalarla en el teléfono ───────────────────────────────
